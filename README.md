@@ -9,8 +9,8 @@ This just outputs the admin logs in below JSON format.
   "level": "Metadata",
   "auditID": "eba53191-a0b3-4234-96a6-c8d8a5284de1",
   "stage": "ResponseComplete",
-  `**`"requestURI": "/api/v1/nodes/crc-pkjt4-master-0/proxy/logs/kube-apiserver/audit-2021-08-14T07-53-24.208.log",
-  "verb": "get",`**`
+  "requestURI": "/api/v1/nodes/crc-pkjt4-master-0/proxy/logs/kube-apiserver/audit-2021-08-14T07-53-24.208.log",
+  "verb": "get",
   "user": {
     "username": "admin",
     "uid": "f5381d86-0e64-419b-81fc-90be5df24a70",
@@ -34,10 +34,10 @@ This just outputs the admin logs in below JSON format.
     "apiVersion": "v1",
     "subresource": "proxy"
   },
-  `**`"responseStatus": {
+  "responseStatus": {
     "metadata": {},
     "code": 200
-  },`**`
+  },
   "requestReceivedTimestamp": "2021-08-14T07:54:50.505138Z",
   "stageTimestamp": "2021-08-14T07:54:52.409419Z",
   "annotations": {
