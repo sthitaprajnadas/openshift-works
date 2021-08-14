@@ -2,9 +2,9 @@
 sh fetchAdminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log >> /dev/null  
 
 This just outputs the admin logs in below JSON format.
-
+```
 {
-  "kind": "Event",
+  "kind": "Event",  
   "apiVersion": "audit.k8s.io/v1",
   "level": "Metadata",
   "auditID": "eba53191-a0b3-4234-96a6-c8d8a5284de1",
@@ -45,7 +45,7 @@ This just outputs the admin logs in below JSON format.
     "authorization.k8s.io/reason": "RBAC: allowed by ClusterRoleBinding \"cluster-admin-0\" of ClusterRole \"cluster-admin\" to User \"admin\""
   }
 }
-
+```
 
 
 
