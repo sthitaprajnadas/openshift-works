@@ -1,5 +1,5 @@
 #!/bin/sh
-# usage - sh fetchAdminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log >> /dev/null
+# usage - sh fetchAdminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log 
 
 #rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
 for node in $(oc get nodes -o name);   # Iterating over each node in the cluster
