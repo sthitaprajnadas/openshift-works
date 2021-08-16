@@ -1,3 +1,5 @@
+The file that was causing issue was termination.log not audit.log . termination.log is not a JSON file.Now script is fully ready.  
+
 # Get all Audit logs for Admin user  
 sh fetchAdminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log >> /dev/null  
 
