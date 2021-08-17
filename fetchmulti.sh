@@ -2,7 +2,7 @@
 # usage: sh fetchmulti.sh | tee -a adminlogs$(date "+%y%m%d_%H%M%S").log >/dev/null
 
 rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
-nodes="crc-pkjt4-master-1 crc-pkjt4-master-2 crc-pkjt4-master-3 crc-pkjt4-master-0"
+nodes="crc-pkjt4-master-1 crc-pkjt4-master-2  crc-pkjt4-master-0 crc-pkjt4-master-3"  # Added 4 nodes here.only 3rd one is present in my cluster.
 for node in $nodes;   # Iterating over each node in the cluster
 do
     oc adm node-logs ${node} --path=kube-apiserver >/dev/null 2>&1    #Aug 17: To first check if node is accessible.
