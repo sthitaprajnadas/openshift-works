@@ -1,4 +1,4 @@
-17 Aug : Added lines in checkadminlog.sh to take care of inaccessible nodes.Since can not really test in my environment.Please try in your env and get back.
+17 Aug : Added lines in checkadminlog.sh to take care of inaccessible nodes.Since can not really test in my environment.Please try in your env and get back.  
 16 Aug :The file that was causing issue was termination.log not audit.log . termination.log is not a JSON file.Now script is fully ready.  
 
 # Get all Audit logs for Admin user  
