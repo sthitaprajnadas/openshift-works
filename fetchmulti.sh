@@ -1,5 +1,5 @@
 #!/bin/sh
-# usage - sh fetchadminlog.sh 2>&1 > adminlogs$(date "+%y%m%d_%H%M%S").log 
+# usage: sh fetchmulti.sh | tee -a adminlogs$(date "+%y%m%d_%H%M%S").log >/dev/null
 
 rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
 nodes="crc-pkjt4-master-1 crc-pkjt4-master-2 crc-pkjt4-master-3 crc-pkjt4-master-0"
