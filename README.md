@@ -1,3 +1,4 @@
+18 Aug : please run fetchmulti.sh in your environment and check the output.Please use the cmd mentioned in usage.
 18 Aug : Added fetchmulti.sh file to demonstrate multiple nodes.Edited fetchadminlog.sh which are now working fine in playground.
 
 17 Aug : Added lines in fetchadminlog.sh to take care of inaccessible nodes.Since can not really test in my environment.Please try in your env and get back.  
