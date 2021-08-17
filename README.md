@@ -1,3 +1,5 @@
+18 Aug : Added fetchmulti.sh file to demonstrate multiple nodes.Edited fetchadminlog.sh which are now working fine in playground.
+
 17 Aug : Added lines in fetchadminlog.sh to take care of inaccessible nodes.Since can not really test in my environment.Please try in your env and get back.  
 16 Aug :The file that was causing issue was termination.log not audit.log . termination.log is not a JSON file.Now script is fully ready.  
 
