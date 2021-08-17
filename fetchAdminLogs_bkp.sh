@@ -1,7 +1,7 @@
 #!/bin/sh
-# usage - sh fetchAdminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log 
+# usage - sh fetchadminlog.sh 2>&1 | tee  adminlogs$(date "+%y%m%d_%H%M%S").log 
 
-#rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
+rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
 for node in $(oc get nodes -o name);   # Iterating over each node in the cluster
 do
     for logfile in $(oc adm node-logs ${node} --path=kube-apiserver | grep '.log')  # iterating over each log file in the node
