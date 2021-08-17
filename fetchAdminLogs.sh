@@ -4,8 +4,8 @@
 #rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
 for node in $(oc get nodes -o name);   # Iterating over each node in the cluster
 do
-    oc adm node-logs ${node} --path=kube-apiserver 2>/dev/null
-    if [ $? -eq 0 ]; then
+    oc adm node-logs ${node} --path=kube-apiserver 2>/dev/null    #Aug 17: To first check if node is accessible.
+    if [ $? -eq 0 ]; then  #Aug 17: Check if previous command gave no error (i.e. node is accessible).If it is then for those process logfiles
 
 
       for logfile in $(oc adm node-logs ${node} --path=kube-apiserver | grep '.log')  # iterating over each log file in the node
@@ -20,7 +20,7 @@ do
           echo "===================End Node : ${node} ======== File : ${logfile}=========================" 
         fi
       done
-    else
+    else    # Aug 17: If node is inaccessible , then print it and move to next node
       echo "======================Node : ${node} is not accessible=========================" 
     fi
 done
