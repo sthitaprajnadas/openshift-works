@@ -2,7 +2,7 @@
 # usage:  sh fetchadminlog.sh | tee -a adminlogs$(date "+%y%m%d_%H%M%S").log >/dev/null
 
 rm -rf adminlogs*.log  # Remove all old logs.Clears the working dir.
-for node in $(oc get nodes -o name);   # Iterating over each node in the cluster
+for node in $(oc get nodes --selector='node-role.kubernetes.io/master' -o name | head -n 1);   # Iterating over each node in the cluster
 do
     oc adm node-logs ${node} --path=kube-apiserver >/dev/null 2>&1    #Aug 17: To first check if node is accessible.
     if [ $? -eq 0 ]; then  #Aug 17: Check if previous command gave no error (i.e. node is accessible).If it is then for those process logfiles
