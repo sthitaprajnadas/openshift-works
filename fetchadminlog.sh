@@ -21,6 +21,6 @@ do
         fi
       done
     else    # Aug 17: If node is inaccessible , then print it and move to next node
-      #echo "======================Node : ${node} is not accessible=========================" 
+      echo 
     fi
 done
