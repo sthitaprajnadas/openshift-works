@@ -14,13 +14,13 @@ do
 
         if [ ! -z "${OUTPUT}" ]  # This to ignore the log files which dont have admin logs
         then
-          echo "====================== Node : ${node} ======== File : ${logfile}=========================" 
+          #echo "====================== Node : ${node} ======== File : ${logfile}=========================" 
           oc adm node-logs ${node} --path=kube-apiserver/${logfile} | jq 'select(.user.username == "admin")'
           #echo ${OUTPUT}    # yields same result as above but does not render the json properly
-          echo "===================End Node : ${node} ======== File : ${logfile}=========================" 
+          #echo "===================End Node : ${node} ======== File : ${logfile}=========================" 
         fi
       done
     else    # Aug 17: If node is inaccessible , then print it and move to next node
-      echo "======================Node : ${node} is not accessible=========================" 
+      #echo "======================Node : ${node} is not accessible=========================" 
     fi
 done
