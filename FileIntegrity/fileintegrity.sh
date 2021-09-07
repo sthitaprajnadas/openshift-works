@@ -3,7 +3,7 @@
 ########################
 echo "FileIntegrity CR status";
 #oc get fileintegrities $(oc get fileintegrities --namespace=openshift-file-integrity | grep -v NAME | awk '{ print $1}') -o jsonpath="{ .status.phase }'
-oc get fileintegrities/worker-fileintegrity  -o jsonpath="{ .status.phase }" --namespace=openshift-file-integrity
+oc get fileintegrities/example-fileintegrity  -o jsonpath="{ .status.phase }" --namespace=openshift-file-integrity
 
    
 sleep 1
