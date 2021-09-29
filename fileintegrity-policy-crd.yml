@@ -1,0 +1,410 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-namespace
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-namespace-example
+        spec:
+          remediationAction: inform # the policy-template spec.remediationAction is overridden by the preceding parameter value for spec.remediationAction.
+          severity: low
+          namespaceSelector:
+            exclude: ["kube-*"]
+            include: ["default"]
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: Namespace # must have namespace 'prod'
+                apiVersion: v1
+                metadata:
+                  name: openshift-file-integrity
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-namespace
+placementRef:
+  name: placement-policy-namespace
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-namespace
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-namespace
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["dev"]}
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-role
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-role-example
+        spec:
+          remediationAction: inform # the policy-template spec.remediationAction is overridden by thepreceding parameter value for spec.remediationAction.
+          severity: high
+          namespaceSelector:
+            exclude: ["kube-*"]
+            include: ["default"]
+          object-templates:
+            - complianceType: mustonlyhave # role definition should exact match
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  creationTimestamp: null
+                  name: file-integrity-operator
+                  namespace: openshift-file-integrity
+                rules:
+                  - apiGroups: ["extensions", ""]
+                    resources: ["pods", "services", "services/finalizers", "endpoints", "persistentvolumeclaims", "events", "configmaps", "secrets"]
+                    verbs: [ "*" ]
+                  - apiGroups: ["extensions", "apps"]
+                    resources: ["deployments", "daemonsets", "statefulsets", "replicasets"]
+                    verbs: [ "*" ]
+                  - apiGroups: ["extensions", "monitoring.coreos.com"]
+                    resources: ["servicemonitors"]
+                    verbs: [ "get","create","update" ]
+                  - apiGroups: ["extensions", "monitoring.coreos.com"]
+                    resources: ["prometheusrules"]
+                    verbs: [ "create" ]
+                  - apiGroups: ["extensions", "apps"]
+                    resources: ["deployments/finalizers"]
+                    verbs: [ "update" ]
+                  - apiGroups: ["extensions", " "]
+                    resources: ["pods"]
+                    verbs: [ "get" ]
+                  - apiGroups: ["extensions", "apps"]
+                    resources: ["replicasets"]
+                    verbs: [ "get" ]
+                  - apiGroups: ["extensions", "fileintegrity.openshift.io"]
+                    resources: ["*"]
+                    verbs: [ "*" ]
+                  - apiGroups: ["extensions", "security.openshift.io"]
+                    resources: ["securitycontextconstraints"]
+                    verbs: [ "use" ]
+          object-templates:
+            - complianceType: mustonlyhave # role definition should exact match
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  creationTimestamp: null
+                  name: file-integrity-daemon
+                  namespace: openshift-file-integrity
+                rules:
+                  - apiGroups: ["extensions", ""]
+                    resources: ["events", "configmaps"]
+                    verbs: [ "create" ]
+                  - apiGroups: ["extensions", "fileintegrity.openshift.io"]
+                    resources: ["fileintegrities"]
+                    verbs: [ "get", "watch" ]
+                  - apiGroups: ["extensions", "security.openshift.io"]
+                    resources: ["securitycontextconstraints"]
+                    verbs: [ "use" ]
+                  - apiGroups: ["extensions", "events.k8s.io"]
+                    resources: ["events"]
+                    verbs: [ "create", "update" ]
+          object-templates:
+            - complianceType: mustonlyhave # role definition should exact match
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: ClusterRole
+                metadata:
+                  name: file-integrity-operator
+                rules:
+                  - apiGroups: ["extensions", ""]
+                    resources: ["nodes"]
+                    verbs: [ "get", "list", "watch" ]
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-namespace
+placementRef:
+  name: placement-policy-namespace
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-namespace
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-namespace
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["dev"]}
+---
+
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-rolebinding
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy-rolebinding-example
+        spec:
+          remediationAction: inform # the policy-template spec.remediationAction is overridden by the preceding parameter value for spec.remediationAction.
+          severity: high
+          namespaceSelector:
+            exclude: ["kube-*"]
+            include: ["default"]
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: RoleBinding # role binding must exist
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name: file-integrity-operator
+                subjects:
+                - kind: ServiceAccount
+                  name: file-integrity-operator # Name is case sensitive
+                  apiGroup: rbac.authorization.k8s.io
+                roleRef:
+                  kind: Role #this must be Role or ClusterRole
+                  name: file-integrity-operator # this must match the name of the Role or ClusterRole you wish to bind to
+                  apiGroup: rbac.authorization.k8s.io
+            object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: RoleBinding
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name:  file-integrity-daemon
+                subjects:
+                - kind: ServiceAccount
+                  name: file-integrity-daemon # Name is case sensitive
+                  apiGroup: rbac.authorization.k8s.io
+                roleRef:
+                  kind: Role #this must be Role or ClusterRole
+                  name: file-integrity-daemon # this must match the name of the Role or ClusterRole you wish to bind to
+                  apiGroup: rbac.authorization.k8s.
+            object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: RoleBinding
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name:  prometheus-k8s
+                subjects:
+                - kind: ServiceAccount
+                  name: prometheus-k8s # Name is case sensitive
+                  apiGroup: rbac.authorization.k8s.io
+                roleRef:
+                  kind: Role #this must be Role or ClusterRole
+                  name: prometheus-k8s # this must match the name of the Role or ClusterRole you wish to bind to
+                  apiGroup: rbac.authorization.k8s.io
+            object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: ClusterRoleBinding
+                apiVersion: rbac.authorization.k8s.io/v1
+                metadata:
+                  name:  file-integrity-operator
+                subjects:
+                - kind: ServiceAccount
+                  name: file-integrity-operator # Name is case sensitive
+                  apiGroup: rbac.authorization.k8s.io
+                roleRef:
+                  kind: ClusterRole #this must be Role or ClusterRole
+                  name: file-integrity-operator # this must match the name of the Role or ClusterRole you wish to bind to
+                  apiGroup: rbac.authorization.k8s.io        
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-rolebinding
+placementRef:
+  name: placement-policy-rolebinding
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-rolebinding
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-rolebinding
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["dev"]}
+
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-deployment
+  annotations:
+    policy.open-cluster-management.io/standards: NIST 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: policy--deployment
+        spec:
+          remediationAction: inform
+          severity: low
+          namespaceSelector:
+            exclude:
+              - kube-*
+            include:
+              - default
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+  name: file-integrity-operator
+  namespace: openshift-file-integrity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: file-integrity-operator
+  template:
+    metadata:
+      labels:
+        name: file-integrity-operator
+    spec:
+      serviceAccountName: file-integrity-operator
+      containers:
+        - name: file-integrity-operator
+          image: "quay.io/file-integrity-operator/file-integrity-operator:latest"
+          command:
+          - file-integrity-operator
+          args:
+          - operator
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "10Mi"
+              cpu: "10m"
+            limits:
+              memory: "200Mi"
+              cpu: "100m"
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "file-integrity-operator"
+            - name: RELATED_IMAGE_OPERATOR
+              value: "quay.io/file-integrity-operator/file-integrity-operator:latest"
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /var/run/secrets/serving-cert
+              readOnly: true
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: file-integrity-operator-serving-cert
+            optional: true
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 120
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 120
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-deployment
+placementRef:
+  name: placement-policy-deployment
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-deployment
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-deployment
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["dev"]}
+---
+
+
