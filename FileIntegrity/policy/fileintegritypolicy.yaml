@@ -1,0 +1,146 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-fileintegrity-operator
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: fileintegrity-operator-ns
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: openshift-file-integrity
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: fileintegrity-operator-catalog-source
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: CatalogSource
+              metadata:
+                name: fileintegrity-operator
+                namespace: openshift-file-integrity
+              spec:
+                displayName: fileintegrity Operator 
+                publisher: github.com/openshift/file-integrity-operator
+                sourceType: grpc
+                image: 'quay.io/file-integrity-operator/file-integrity-operator-index:latest'
+                updateStrategy:
+                  registryPoll:
+                    interval: 45m
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: fileintegrity-operator-group
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: operators.coreos.com/v1
+              kind: OperatorGroup
+              metadata:
+                name: fileintegrity-operator
+                namespace: openshift-file-integrity
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: fileintegrity-operator-subscription
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: Subscription
+              metadata:
+                name: fileintegrity-operator-sub
+                namespace: openshift-file-integrity
+              spec:
+                channel: alpha
+                name: file-integrity-operator
+                source: file-integrity-operator
+                sourceNamespace: openshift-file-integrity
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: fileintegrity
+      spec:
+        remediationAction: inform
+        severity: high
+        object-templates:
+          - complianceType: musthave
+            objectDefinition:
+              apiVersion: fileintegrity.openshift.io/v1alpha1
+              kind: FileIntegrity
+              metadata:
+                name: example-fileintegrity
+                namespace: openshift-file-integrity
+                labels: 
+                  app: frontend
+              spec:
+               # nodeSelector:
+               #   kubernetes.io/hostname: " "
+                tolerations:
+                - key: "node-role.kubernetes.io/master"
+                  operator: "Exists"
+                  effect: "NoSchedule"
+                config:
+                  name: "myconfig"
+                  namespace: "openshift-file-integrity"
+                  key: "config"
+                  gracePeriod: 900
+                debug: true
+              status:
+                phase: Active
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: binding-policy-fileintegrity-operator
+placementRef:
+  name: placement-policy-fileintegrity-operator
+  kind: PlacementRule
+  apiGroup: apps.open-cluster-management.io
+subjects:
+- name: policy-fileintegrity-operator
+  kind: Policy
+  apiGroup: policy.open-cluster-management.io
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: placement-policy-fileintegrity-operator
+spec:
+  clusterConditions:
+  - status: "True"
+    type: ManagedClusterConditionAvailable
+  clusterSelector:
+    matchExpressions:
+      - {key: environment, operator: In, values: ["dev"]}
