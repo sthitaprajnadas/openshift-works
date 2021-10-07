@@ -39,13 +39,13 @@ spec:
               apiVersion: operators.coreos.com/v1alpha1
               kind: CatalogSource
               metadata:
-                name: fileintegrity-operator
-                namespace: openshift-file-integrity
+                name: file-integrity-operator
+                namespace: openshift-marketplace
               spec:
-                displayName: fileintegrity Operator 
+                displayName: File Integrity Operator
                 publisher: github.com/openshift/file-integrity-operator
                 sourceType: grpc
-                image: 'quay.io/file-integrity-operator/file-integrity-operator-index:latest'
+                image: quay.io/file-integrity-operator/file-integrity-operator-index:latest
                 updateStrategy:
                   registryPoll:
                     interval: 45m
@@ -85,6 +85,7 @@ spec:
                 channel: alpha
                 name: file-integrity-operator
                 source: file-integrity-operator
+                installPlanApproval: Automatic
                 sourceNamespace: openshift-file-integrity
   - objectDefinition:
       apiVersion: policy.open-cluster-management.io/v1
