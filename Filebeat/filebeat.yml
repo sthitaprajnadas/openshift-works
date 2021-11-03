@@ -1,0 +1,242 @@
+---
+apiVersion: v1
+kind: ConfigMap                     #ConfigMap provides a way to inject configuration data into pods.
+metadata:
+  name: filebeat-config
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+#To configure Filebeat, edit the configuration file. The default configuration file is called filebeat.yml
+data:                   
+  filebeat.yml: |-     
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/*.log
+      #You can define processors in your configuration to process events before they are sent to the configured output.
+      processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+
+    #suppose there mutilple sp jms kibana , mysql, we dont want logs file from those just want log file from spring boat app so using  autodscover
+    # To enable hints based autodiscover, remove `filebeat.inputs` configuration and uncomment this:
+    #filebeat.autodiscover:
+    #  providers:
+    #    - type: kubernetes
+    #      node: ${NODE_NAME}                                                             
+    #      hints.enabled: true                                                             
+    #      hints.default_config:
+    #        type: container
+    #        paths:
+    #          - /var/log/containers/*${data.kubernetes.container.id}.log
+
+    #library provides processors for: reducing the number of exported fields, enhancing events with additional metadata, performing additional processing and decoding
+    processors:
+      - add_cloud_metadata:
+      - add_host_metadata:
+    # configure the o/p for elasticsearch service on elastic cloud
+    # overwrites output.elasticsearch.hosts 
+    cloud.id: ${ELASTIC_CLOUD_ID}
+    #overwrites output.elasticsearch.username, output.elasticsearch.password
+    cloud.auth: ${ELASTIC_CLOUD_AUTH}
+    #Basic authentication credentials (username and password)
+    output.elasticsearch:
+      hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
+---
+apiVersion: apps/v1
+kind: DaemonSet                              # DaemonSet ensures that all (or some) Nodes run a copy of a Pod, As nodes are added to the cluster, Pods are added to them
+metadata:
+  name: filebeat
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: filebeat
+    spec:
+      serviceAccountName: filebeat          #Kubernetes service accounts allow you to give an identity to your Pods, Authenticate Pods to the Kubernetes API server, allowing the Pods to read and manipulate Kubernetes API objects
+      terminationGracePeriodSeconds: 30     #The PreStop hook is called immediately before a container is terminated. 
+      hostNetwork: true                     #When a pod is configured with hostNetwork: true, the applications running in such a pod can directly see the network interfaces of the host machine 
+      dnsPolicy: ClusterFirstWithHostNet    #To have DNS options set along with hostNetwork, you should specify DNS policy explicitly to ‘ClusterFirstWithHostNet
+      containers:
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:8.0.0
+        args: [
+          "-c", "/etc/filebeat.yml",        #Define a Command and Arguments for a Container  #Expose Pod Information to Containers Through Files
+          "-e",
+        ]
+        env:                                #set environment variables for the containers that run in the Pod
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: elastic
+        - name: ELASTICSEARCH_PASSWORD
+          value: changeme
+        - name: ELASTIC_CLOUD_ID
+          value:
+        - name: ELASTIC_CLOUD_AUTH
+          value:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:                       #Container images may have a specific user  configured for the process to run as. This can be overridden with the runAsUser
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true 
+        resources:
+          limits:                              #Limits, on the other hand, make sure a container never goes above a certain value.
+            memory: 200Mi 
+          requests:                            # Requests are what the container is guaranteed to get
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:                          #mounting of the declared volume into a container in the same Pod.
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: data
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0640
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: varlog
+        hostPath:
+          path: /var/log
+      # data folder stores a registry of read status for all files, so we don't send everything again on a Filebeat pod restart
+      - name: data
+        hostPath:
+      # When filebeat runs as non-root user, this directory needs to be writable by group (g+w).
+          path: /var/lib/filebeat-data
+          type: DirectoryOrCreate                  #If nothing exists at the given path, an empty directory will be created 
+
+
+# Role or ClusterRole contains rules that represent a set of permissions. Permissions are purely additive
+# Role always sets permissions within a particular namespace; when you create a Role, you have to specify the namespace it belongs in to define permissions on cluster-scoped resources
+# ClusterRole can be used to grant the same permissions as a Role. Because ClusterRoles are cluster-scoped, you can also use them to grant access to cluster-scoped resources (like nodes),non-resource endpoints (like /healthz),namespaced resources (like Pods), across all namespaces
+# Role binding grants the permissions defined in a role to a user or set of users. It holds a list of subjects (users, groups, or service accounts), and a reference to the role being granted.
+# RoleBinding grants permissions within a specific namespace whereas a ClusterRoleBinding grants that access cluster-wide.
+--
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: filebeat
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: filebeat-kubeadm-config
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: filebeat-kubeadm-config
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+  labels:
+    k8s-app: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups: ["apps"]
+  resources:
+    - replicasets
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: filebeat
+  # should be the namespace where filebeat is running
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: filebeat-kubeadm-config
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    resourceNames:
+      - kubeadm-config
+    verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+---
